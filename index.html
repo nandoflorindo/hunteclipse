@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reis Supremos - Hunts</title>
+    <style>
+        :root {
+            --bg: #050507;
+            --card: #111114;
+            --border: #27272a;
+            --gold: #d4af37;
+            --gold-light: #f1d57a;
+            --green: #10b981;
+            --red: #ef4444;
+            --text: #f4f4f5;
+            --accent: rgba(212, 175, 55, 0.1);
+            
+            /* Cores EK/RP */
+            --norte: #3b82f6;
+            --sul-esq: #facc15;
+            --sul-dir: #ef4444;
+        }
+
+        body, html {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', -apple-system, sans-serif;
+            margin: 0; padding: 0;
+            overflow-x: hidden;
+        }
+
+        /* --- SPLASH SCREEN --- */
+        #splash-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg); z-index: 10000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: all 1s cubic-bezier(0.9, 0, 0.1, 1);
+        }
+        .loader-ring {
+            width: 80px; height: 80px; border: 2px solid rgba(212, 175, 55, 0.1);
+            border-top: 2px solid var(--gold); border-radius: 50%;
+            animation: spin 0.8s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+            position: relative;
+        }
+        .loader-ring::after {
+            content: ''; position: absolute; top: 5px; left: 5px; right: 5px; bottom: 5px;
+            border: 1px solid rgba(212, 175, 55, 0.05); border-top: 1px solid var(--gold-light);
+            border-radius: 50%; animation: spin 1.5s reverse infinite;
+        }
+        .sync-text-splash {
+            margin-top: 25px; font-size: 0.65rem; letter-spacing: 5px;
+            color: var(--gold); text-transform: uppercase; font-weight: 900;
+            animation: blink 1.2s infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        /* --- TRANSIÇÃO --- */
+        #main-wrapper { opacity: 0; transform: scale(0.98); filter: blur(10px); transition: all 1.2s ease; }
+        body.loaded #main-wrapper { opacity: 1; transform: scale(1); filter: blur(0); }
+        body.loaded #splash-screen { opacity: 0; visibility: hidden; }
+
+        /* --- HEADER E BUSCA --- */
+        .search-header {
+            position: sticky; top: 0; width: 100%;
+            background: rgba(5, 5, 7, 0.85); backdrop-filter: blur(15px);
+            padding: 15px 0; z-index: 1000; border-bottom: 1px solid var(--border);
+            display: flex; justify-content: center; align-items: center;
+            animation: fadeInDown 0.8s forwards;
+        }
+        .search-container { position: relative; width: 90%; max-width: 450px; display: flex; align-items: center; }
+        #searchInput {
+            width: 100%; padding: 12px 45px 12px 18px; border-radius: 10px;
+            border: 1px solid var(--border); background: rgba(255, 255, 255, 0.05);
+            color: #fff; outline: none; box-sizing: border-box; transition: 0.3s;
+        }
+        #searchInput:focus { border-color: var(--gold); background: rgba(255, 255, 255, 0.08); box-shadow: 0 0 15px rgba(212, 175, 55, 0.1); }
+        #clearSearch {
+            position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+            background: var(--border); color: #fff; border: none; border-radius: 50%;
+            width: 22px; height: 22px; cursor: pointer; display: none; font-size: 10px;
+            align-items: center; justify-content: center;
+        }
+
+        header { text-align: center; margin: 60px 0 40px; animation: fadeIn 1s forwards; }
+        .logo { max-width: 130px; filter: drop-shadow(0 0 15px rgba(212, 175, 55, 0.3)); }
+        h1 { font-size: 1.4rem; font-weight: 900; color: var(--gold); letter-spacing: 5px; text-transform: uppercase; margin: 20px 0 5px; }
+
+        /* --- GRIDS --- */
+        .section-container { width: 98%; max-width: 1500px; margin: 0 auto; }
+        .section-title {
+            margin: 40px 0 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border);
+            color: var(--gold); font-size: 0.9rem; font-weight: 900; text-transform: uppercase; letter-spacing: 3px;
+        }
+
+        .column-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 15px; margin-bottom: 30px;
+        }
+        .column-group { display: flex; flex-direction: column; gap: 12px; animation: fadeInUp 1s forwards; }
+        
+        .column-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 5px; border-left: 3px solid var(--gold); padding-left: 10px;
+        }
+        .column-label { font-size: 0.7rem; color: #a1a1aa; font-weight: 800; text-transform: uppercase; }
+
+        .map-btn-title {
+            font-size: 0.6rem; color: var(--gold); font-weight: 900;
+            background: rgba(212, 175, 55, 0.05); padding: 2px 8px;
+            border-radius: 4px; border: 1px solid var(--gold);
+            cursor: pointer; text-transform: uppercase; transition: 0.2s;
+        }
+        .map-btn-title:hover { background: var(--gold); color: #000; }
+
+        /* --- CARDS --- */
+        .hunt-card {
+            background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+            overflow: hidden; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .hunt-card:hover { border-color: #444; transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
+        .card-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .header-left h2 { margin: 0; font-size: 0.8rem; font-weight: 700; color: #fff; text-transform: uppercase; }
+        
+        /* BADGES COLORIDAS */
+        .info-badge {
+            display: inline-block; font-size: 0.65rem; padding: 2px 10px;
+            border-radius: 5px; font-weight: 800; text-transform: uppercase; margin-top: 5px;
+        }
+        .hunt-ekrp .badge-norte { background: rgba(59, 130, 246, 0.15); color: var(--norte); border: 1px solid var(--norte); }
+        .hunt-ekrp .badge-sul-esq { background: rgba(250, 204, 21, 0.15); color: var(--sul-esq); border: 1px solid var(--sul-esq); }
+        .hunt-ekrp .badge-sul-dir { background: rgba(239, 68, 68, 0.15); color: var(--sul-dir); border: 1px solid var(--sul-dir); }
+        
+        .badge-default { background: rgba(212, 175, 55, 0.1); color: var(--gold); border: 1px solid rgba(212, 175, 55, 0.3); }
+
+        .avail-tag { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; }
+        .card-content { max-height: 0; overflow: hidden; transition: max-height 0.5s ease; background: #0c0c0e; }
+        .hunt-card.active .card-content { max-height: 1500px; border-top: 1px solid var(--border); }
+
+        .slot { display: flex; justify-content: space-between; padding: 12px 15px; border-bottom: 1px solid #1a1a1d; font-size: 0.8rem; align-items: center; }
+        .current-slot { background: var(--accent) !important; border-left: 4px solid var(--gold) !important; }
+        .time { font-family: 'Roboto Mono', monospace; color: #71717a; font-weight: 600; }
+        .p-tag { background: #27272a; color: #fff; padding: 3px 10px; border-radius: 6px; font-weight: 600; border-left: 2px solid var(--gold); }
+        .free-label { color: var(--green); font-weight: 800; opacity: 0.8; }
+
+        /* --- ANIMAÇÕES --- */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- MODAL --- */
+        #zoomModal {
+            display: none; position: fixed; z-index: 10001; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.98); backdrop-filter: blur(15px); justify-content: center; align-items: center;
+        }
+        #zoomModal img { max-width: 90%; max-height: 90%; border-radius: 8px; border: 2px solid var(--gold); box-shadow: 0 0 50px rgba(212, 175, 55, 0.3); }
+    </style>
+</head>
+<body>
+
+<div id="splash-screen">
+    <div class="loader-ring"></div>
+    <div class="sync-text-splash">Carregando Planilha...</div>
+</div>
+
+<div id="main-wrapper">
+    <div id="zoomModal" onclick="this.style.display='none'"><img src="" id="modalImg"></div>
+
+    <div class="search-header">
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Pesquisar local ou player...">
+            <button id="clearSearch">✕</button>
+        </div>
+    </div>
+
+    <header>
+        <img src="logoneworder.png" alt="REIS SUPREMOS" class="logo">
+        <h1>Reis Supremos - Hunts</h1>
+    </header>
+
+    <div id="main-container" class="section-container"></div>
+</div>
+
+<script>
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxgm3s0Zq-Gm4TAzGzYz-l8mx9hcHRCrcoCXLnVgIK-xexwZxbncLGsaBa711wYMWeT/exec';
+    const turnosFixos = ["10:00-13:00", "13:00-16:00", "16:00-19:00", "19:00-22:00", "22:00-01:00", "01:00-04:00", "04:00-07:00", "07:00-10:00"];
+
+    const MAPAS_COLUNAS = { "EK/RP": "poiekrp.jpeg" };
+
+    function isNow(range) {
+        try {
+            const now = new Date();
+            const cur = now.getHours() * 60 + now.getMinutes();
+            const [start, end] = range.split('-').map(t => {
+                const [h, m] = t.trim().split(':');
+                return (parseInt(h) * 60) + (parseInt(m) || 0);
+            });
+            return start < end ? (cur >= start && cur < end) : (cur >= start || cur < end);
+        } catch(e) { return false; }
+    }
+
+    function getBadgeMarkup(info, isEKRP) {
+        if (!info) return "";
+        let colorClass = "badge-default";
+        if (isEKRP) {
+            const t = info.toLowerCase();
+            if (t.includes("norte")) colorClass = "badge-norte";
+            else if (t.includes("sul esquerda")) colorClass = "badge-sul-esq";
+            else if (t.includes("sul direita")) colorClass = "badge-sul-dir";
+        }
+        return `<span class="info-badge ${colorClass}">${info}</span>`;
+    }
+
+    function createCard(hunt, categoryLabel) {
+        const isEKRP = categoryLabel === "EK/RP";
+        let cleanName = hunt.nome, infoText = "";
+        const match = hunt.nome.match(/\((.*?)\)/);
+        if (match) {
+            cleanName = hunt.nome.replace(/\(.*?\)/, '').trim();
+            infoText = match[1];
+        }
+
+        let slotsHtml = '';
+        let vagoCount = 0;
+        const isManual = hunt.slots.some(s => s.player.includes('['));
+
+        const process = (time, raw) => {
+            const isBusy = raw.length > 0 && raw.toLowerCase() !== "livre";
+            if (!isBusy) vagoCount++;
+            return `<div class="slot ${isNow(time) ? 'current-slot' : ''}"><span class="time">${time}</span><span class="${isBusy ? 'p-tag' : 'free-label'}">${isBusy ? raw : 'DISPONÍVEL'}</span></div>`;
+        };
+
+        if (isManual) {
+            hunt.slots.forEach(s => {
+                const m = s.player.match(/\[(.*?)\]/);
+                if (m) slotsHtml += process(m[1], s.player.replace(/\[.*?\]/, "").trim());
+            });
+        } else {
+            for (let i = 0; i < 8; i++) slotsHtml += process(turnosFixos[i], hunt.slots[i] ? hunt.slots[i].player.trim() : "");
+        }
+
+        const card = document.createElement('div');
+        card.className = `hunt-card ${isEKRP ? 'hunt-ekrp' : ''}`;
+        card.innerHTML = `
+            <div class="card-header" onclick="this.parentElement.classList.toggle('active')">
+                <div class="header-left">
+                    <h2>${cleanName}</h2>
+                    ${getBadgeMarkup(infoText, isEKRP)}
+                </div>
+                <span class="avail-tag" style="color:${vagoCount > 0 ? 'var(--green)' : 'var(--red)'}">${vagoCount} Vagas</span>
+            </div>
+            <div class="card-content">
+                ${slotsHtml}
+            </div>
+        `;
+        return card;
+    }
+
+    function render(data) {
+        const container = document.getElementById('main-container');
+        container.innerHTML = '';
+
+        // --- POI ---
+        container.innerHTML += '<div class="section-title">⚔️ Pits of Inferno (POI)</div>';
+        const poiGrid = document.createElement('div'); poiGrid.className = 'column-grid';
+        [{l:'PROFIT', f:'Profit'}, {l:'ED', f:'ED'}, {l:'MS', f:'MS'}, {l:'EK/RP', f:'EK e RP'}].forEach(sub => {
+            const col = document.createElement('div'); col.className = 'column-group';
+            const mapImg = MAPAS_COLUNAS[sub.l];
+            col.innerHTML = `<div class="column-header"><span class="column-label">${sub.l}</span>${mapImg ? `<span class="map-btn-title" onclick="document.getElementById('modalImg').src='${mapImg}'; document.getElementById('zoomModal').style.display='flex'">Mapa</span>` : ''}</div>`;
+            data.filter(h => h.nome.includes('POI Selo') && h.nome.includes(sub.f)).forEach(h => col.appendChild(createCard(h, sub.l)));
+            poiGrid.appendChild(col);
+        });
+        container.appendChild(poiGrid);
+
+        // --- WARZONE ---
+        container.innerHTML += '<div class="section-title">🌀 Warzones</div>';
+        const wzGrid = document.createElement('div'); wzGrid.className = 'column-grid';
+        ['WZ 10', 'WZ 20', 'WZ 30', 'WZ 40'].forEach(wz => {
+            const col = document.createElement('div'); col.className = 'column-group';
+            const mapImg = MAPAS_COLUNAS[wz];
+            col.innerHTML = `<div class="column-header"><span class="column-label">${wz}</span>${mapImg ? `<span class="map-btn-title" onclick="document.getElementById('modalImg').src='${mapImg}'; document.getElementById('zoomModal').style.display='flex'">Mapa</span>` : ''}</div>`;
+            data.filter(h => h.nome.includes(wz)).forEach(h => col.appendChild(createCard(h, wz)));
+            wzGrid.appendChild(col);
+        });
+        container.appendChild(wzGrid);
+
+        // --- OUTRAS ---
+        container.innerHTML += '<div class="section-title">🛡️ Outras Hunts</div>';
+        const outrasGrid = document.createElement('div'); outrasGrid.className = 'column-grid';
+        data.filter(h => !h.nome.includes('POI Selo') && !h.nome.includes('WZ')).forEach(h => outrasGrid.appendChild(createCard(h, "Outros")));
+        container.appendChild(outrasGrid);
+    }
+
+    async function fetchData() {
+        try {
+            const res = await fetch(SCRIPT_URL);
+            const data = await res.json();
+            render(data);
+            document.body.classList.add('loaded');
+        } catch (e) { document.querySelector('.sync-text-splash').innerText = "FALHA NA CONEXÃO"; }
+    }
+
+    const sInput = document.getElementById('searchInput');
+    const cBtn = document.getElementById('clearSearch');
+    sInput.addEventListener('input', (e) => {
+        const termo = e.target.value.toLowerCase();
+        cBtn.style.display = termo ? 'flex' : 'none';
+        document.querySelectorAll('.hunt-card').forEach(card => card.style.display = card.innerText.toLowerCase().includes(termo) ? 'block' : 'none');
+    });
+    cBtn.onclick = () => { sInput.value = ''; sInput.dispatchEvent(new Event('input')); };
+
+    fetchData();
+    setInterval(fetchData, 60000);
+</script>
+</body>
+</html>
